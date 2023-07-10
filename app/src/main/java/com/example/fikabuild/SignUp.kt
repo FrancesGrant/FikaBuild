@@ -41,7 +41,7 @@ class SignUp : AppCompatActivity() {
                 .addOnCompleteListener(this) { task ->
                     if (task.isSuccessful) {
                         // Sign-up success, proceed to main activity or perform other actions
-                        val intent = Intent(this@SignUp, MainActivity::class.java)
+                        val intent = Intent(this@SignUp, ProfileCreation::class.java)
                         startActivity(intent)
                     } else {
                         // Sign-up failed, handle the error
