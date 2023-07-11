@@ -30,38 +30,29 @@
 
     </androidx.appcompat.widget.Toolbar>
 
-    <ImageView
-        android:id="@+id/imageViewProfilePicture"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="130sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/profile_placeholder" />
 
     <TextView
         android:id="@+id/textViewAddPhoto"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_margin="150sp"
         android:paddingStart="60dp"
         android:paddingEnd="60dp"
-        android:text="Add photo"
+        android:text="Almost complete!"
         android:textAlignment="center"
         android:textColor="#474747"
-        android:textSize="16sp"
+        android:fontFamily="sans-serif"
+        android:textSize="20sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/imageViewProfilePicture" />
+        app:layout_constraintTop_toBottomOf="@+id/customActionBar" />
 
     <EditText
         android:id="@+id/editTextUsername"
         android:layout_width="320dp"
         android:layout_height="48dp"
-        android:layout_marginTop="40sp"
+        android:layout_marginTop="25sp"
         android:background="@drawable/round_corner_text_input"
         android:ems="10"
         android:hint="Username"

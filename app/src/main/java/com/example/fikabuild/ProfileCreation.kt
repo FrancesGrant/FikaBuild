@@ -2,30 +2,39 @@ package com.example.fikabuild
 
 import android.content.Intent
 import android.net.Uri
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.MenuItem
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
-import org.json.JSONObject
-import java.io.IOException
+import com.google.firebase.storage.StorageReference
+import com.google.firebase.storage.ktx.storage
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
+import org.json.JSONObject
+import java.io.IOException
+import java.util.*
+
 
 data class UserProfile(
     val username: String,
     val bio: String,
-    val address: String
+    val address: String,
 )
 
 class ProfileCreation : AppCompatActivity() {
     // Firebase
     private val db = FirebaseFirestore.getInstance()
     private val usersCollection = db.collection("users")
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_profile_creation)
@@ -43,6 +52,8 @@ class ProfileCreation : AppCompatActivity() {
 
         // Buttons
         val createProfile = findViewById<Button>(R.id.buttonCreateProfile)
+
+
         createProfile.setOnClickListener {
             val username = editTextUsername.text.toString()
             val bio = editTextBio.text.toString()
@@ -57,17 +68,17 @@ class ProfileCreation : AppCompatActivity() {
                     usersCollection.document(username)
                         .set(userProfile)
                         .addOnSuccessListener {
-                            // Profile data saved successfully
+                            // Profile data saved successfully, user brought to MainActivity screen
                             val intent = Intent(this@ProfileCreation, MainActivity::class.java)
                             startActivity(intent)
                         }
                         .addOnFailureListener { e ->
-                            // Handle the failure to save profile data
-                            // Show an error message or perform appropriate actions
+                            // Error message displayed for failure to save profile data
+                            Toast.makeText(this@ProfileCreation, "Profile failed to save, please try again", Toast.LENGTH_SHORT).show()
                         }
                 } else {
-                    // Failed to convert address to coordinates
-                    // Show an error message or perform appropriate actions
+                    // Error message displayed for failure to convert address to coordinates
+                    Toast.makeText(this@ProfileCreation, "Address failed to save, please try again", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -124,3 +135,4 @@ class ProfileCreation : AppCompatActivity() {
         return null
     }
 }
+
