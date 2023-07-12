@@ -1,40 +1,45 @@
-#Fika - Connecting people and places through coffee.
+# Fika - Connecting people and places through coffee.
 ***
 Fika is mobile application that promotes in-person connection between users by providing a service that finds equidistant meeting places using two users locations.
 
 Future feature implementation: UPDATE HERE
 
-#Android development
+# Android development
 ***
 A summary of technologies used:
 * Entirely written using Kotlin.
 * Google Map APIs are used for location-based services.
 * Firebase is used for authentication, database and cloud storage.
 
-##Architecture
+## Architecture
 ***
 The Fika app follows the official architecture guidance.  You can find more information on the architecture guidance [here](https://developer.android.com/topic/architecture).
 
-###Architecture Overview
+### Architecture Overview
+The software architecture follows a client-server model.  The mobile app serving as the client and
+a cloud-based server handling the backend operations. The app is developed using Kotlin.  The application
+integrates with Google Maps API which provides location-based services.  Firebase Authentication and
+Firestore is used to manage user authentication and secure data storage.
+
 The Fika app has three layers, a data layer, a domain layer and a UI layer. 
 ![App architecture](https://github.com/android/nowinandroid/blob/main/docs/images/architecture-1-overall.png)
-#Features 
+# Features 
 ***
 Fika allows users to create a profile, connect with others and find meeting points for coffee between users.  Users can also save their favourite places, and send meeting requests 
 to other users. 
 
-##Screenshots 
+## Screenshots 
 ***
 ADD SCREENSHOTS OF THE APP HERE
 
-#Development setup
+# Development setup
 ***
 Fika uses the latest Gradle build system.  To ensure you are running the latest stable version you can check [here](https://developer.android.com/studio).
 
-##API keys
+## API keys
 ADD API KEY ADVICE HERE
 
-#License
+# License
 DECIDE ON LICENSE 
 
 
