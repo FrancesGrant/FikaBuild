@@ -16,6 +16,11 @@ A summary of technologies used:
 The Fika app follows the official architecture guidance.  You can find more information on the architecture guidance [here](https://developer.android.com/topic/architecture).
 
 ### Architecture Overview
+The software architecture follows a client-server model.  The mobile app serving as the client and
+a cloud-based server handling the backend operations. The app is developed using Kotlin.  The application
+integrates with Google Maps API which provides location-based services.  Firebase Authentication and
+Firestore is used to manage user authentication and secure data storage.
+
 The Fika app has three layers, a data layer, a domain layer and a UI layer. 
 ![App architecture](https://github.com/android/nowinandroid/blob/main/docs/images/architecture-1-overall.png)
 # Features 
