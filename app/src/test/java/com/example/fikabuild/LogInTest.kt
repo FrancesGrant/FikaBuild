@@ -32,9 +32,9 @@ class LogInTest {
     }
 
     /**
-     * Test verifies that when a sign-in is successful, the appropriate intent is launched to navigate to the HomeScreen class.
+     * Test verifies that when a sign-in is successful, the appropriate intent is launched to navigate to the MapsActivity class.
      * Test uses a stubbed behaviour for the signInWithEmailAndPassword method.
-     * When the task is completed it verifies if the sign-in was successful and launches the HomeScreen.
+     * When the task is completed it verifies if the sign-in was successful and launches the MapsActivity.
      * If the test fails and the sign-in is not successful an error message is displayed.
      */
     @Test
@@ -50,7 +50,7 @@ class LogInTest {
                     val intentCaptor = ArgumentCaptor.forClass(Intent::class.java)
                     verify(mockActivityResultLauncher).launch(intentCaptor.capture())
                     val intent = intentCaptor.value
-                    assertEquals(HomeScreen::class.java, intent.component?.className)
+                    assertEquals(MapsActivity::class.java, intent.component?.className)
                 } else {
                     fail("Sign-in not successful")
                 }

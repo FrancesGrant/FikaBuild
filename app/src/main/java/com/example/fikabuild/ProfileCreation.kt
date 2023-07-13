@@ -27,7 +27,7 @@ import java.io.IOException
 data class UserProfile(
     val username: String,
     val bio: String,
-    val address: String,
+    val coordinates: String,
 )
 
 /**
@@ -82,8 +82,8 @@ class ProfileCreation : AppCompatActivity() {
                     usersCollection.document(username)
                         .set(userProfile)
                         .addOnSuccessListener {
-                            // Profile data saved successfully, user brought to HomeScreen screen
-                            val intent = Intent(this@ProfileCreation, HomeScreen::class.java)
+                            // Profile data saved successfully, user brought to MapsActivity screen
+                            val intent = Intent(this@ProfileCreation, MapsActivity::class.java)
                             startActivity(intent)
                         }
                         .addOnFailureListener {
