@@ -30,23 +30,37 @@
 
     </androidx.appcompat.widget.Toolbar>
 
-
     <TextView
-        android:id="@+id/textViewAddPhoto"
+        android:id="@+id/textViewAlmostThere"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="150sp"
-        android:paddingStart="60dp"
-        android:paddingEnd="60dp"
-        android:text="Almost complete!"
-        android:textAlignment="center"
-        android:textColor="#474747"
-        android:fontFamily="sans-serif"
+        android:layout_margin="90sp"
+        android:fontFamily="sans-serif-black"
+        android:text="Almost there!"
+        android:textColor="@color/black"
         android:textSize="20sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/customActionBar" />
+
+
+    <TextView
+        android:id="@+id/textViewAdditionalText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="30sp"
+        android:fontFamily="sans-serif"
+        android:paddingStart="60dp"
+        android:paddingEnd="60dp"
+        android:text="We just need a few more details to create your profile"
+        android:textAlignment="center"
+        android:textColor="#474747"
+        android:textSize="20sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textViewAlmostThere" />
 
     <EditText
         android:id="@+id/editTextUsername"
@@ -62,7 +76,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textViewAddPhoto" />
+        app:layout_constraintTop_toBottomOf="@+id/textViewAdditionalText" />
 
     <EditText
         android:id="@+id/editTextBio"
@@ -83,7 +97,7 @@
     <EditText
         android:id="@+id/editTextAddress"
         android:layout_width="320dp"
-        android:layout_height="125dp"
+        android:layout_height="48dp"
         android:layout_marginTop="20sp"
         android:background="@drawable/round_corner_text_input"
         android:ems="10"
@@ -101,17 +115,17 @@
     <Button
         android:id="@+id/buttonCreateProfile"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="48dp"
         android:layout_marginTop="35sp"
         android:background="@drawable/round_corner_button"
-        android:text="Create profile"
         android:fontFamily="sans-serif"
+        android:text="Create profile"
         android:textAllCaps="false"
         android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/editTextAddress" />
-
+    
 
 </androidx.constraintlayout.widget.ConstraintLayout>
