@@ -6,32 +6,48 @@ import android.os.Bundle
 import android.view.MenuItem
 import android.widget.Button
 import android.widget.EditText
+import android.widget.Toast
 import androidx.appcompat.widget.Toolbar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 
+/**
+ * This activity allows users to sign up to the application.
+ *
+ * The Firebase Authentication instance is used for user authentication.
+ */
+
 class SignUp : AppCompatActivity() {
 
+    // Class-level variables
     private lateinit var auth: FirebaseAuth
 
+    /**
+     * Overrides the `onCreate` method of the activity to initialize and set up the login screen.
+     *
+     * @param savedInstanceState The saved instance state bundle.
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_sign_up)
 
-        // Firebase
+        // Firebase authentication instance used for user authentication
         auth = Firebase.auth
-        // Toolbar
+        // Toolbar for navigation
         val toolbar = findViewById<Toolbar>(R.id.customActionBar)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayShowTitleEnabled(false)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        // Text inputs
+        // Text inputs from user
         val emailEditText = findViewById<EditText>(R.id.editTextEmail)
         val passwordEditText = findViewById<EditText>(R.id.editTextPassword)
-        // Buttons
+        // Button to sign up
         val signUpButton = findViewById<Button>(R.id.signUpButton)
 
+        /**
+         * Sets an OnClickListener on the signUpButton to handle the sign up process.
+         */
         signUpButton.setOnClickListener {
             val email = emailEditText.text.toString()
             val password = passwordEditText.text.toString()
@@ -40,19 +56,23 @@ class SignUp : AppCompatActivity() {
             auth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this) { task ->
                     if (task.isSuccessful) {
-                        // Sign-up success, proceed to main activity or perform other actions
+                        // If the sign-up is successful the main activity is launched
                         val intent = Intent(this@SignUp, ProfileCreation::class.java)
                         startActivity(intent)
                     } else {
-                        // Sign-up failed, handle the error
-                        // You can display an error message or take appropriate action
-                        // based on the task.exception
+                        // If the sign-up failed the user receives an error message
+                        Toast.makeText(this@SignUp, "Sign up has failed please try again", Toast.LENGTH_SHORT).show()
                     }
                 }
         }
     }
 
-    // Toolbar back button functionality
+    /**
+     * Overrides the `onOptionsItemSelected` method to handle menu item selections.
+     *
+     * @param item The selected menu item.
+     * @return Boolean value indicating whether the item selection is handled.
+     */
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             android.R.id.home -> {
