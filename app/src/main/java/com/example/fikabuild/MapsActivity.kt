@@ -1,173 +1,193 @@
 package com.example.fikabuild
 
+import android.Manifest
+import android.content.Context
 import android.content.Intent
-import android.location.Geocoder
+import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationManager
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Button
 import android.widget.ImageButton
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
-
-import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MarkerOptions
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.example.fikabuild.databinding.ActivityMapsBinding
-import com.google.firebase.auth.FirebaseAuth
+import com.google.android.gms.location.*
+import com.google.android.gms.maps.*
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MapStyleOptions
+import com.google.android.gms.maps.model.MarkerOptions
 import com.google.firebase.auth.ktx.auth
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
+    private val LOCATION_PERMISSION_REQUEST_CODE = 123
     private lateinit var mMap: GoogleMap
     private lateinit var binding: ActivityMapsBinding
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var locationRequest: LocationRequest
+    private lateinit var locationCallback: LocationCallback
 
-    /**
-     * Overrides the `onCreate` method of the activity to initialize and set up the login screen.
-     *
-     * @param savedInstanceState The saved instance state bundle.
-     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         binding = ActivityMapsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+        // Check if location permission is granted
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            // Request location permission from the user
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION),
+                LOCATION_PERMISSION_REQUEST_CODE
+            )
+        }
+
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
-
-        // Toolbar
         val toolbar = findViewById<Toolbar>(R.id.customActionBar)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayShowTitleEnabled(false)
-        //Buttons
+
         val myFikaButton = findViewById<Button>(R.id.buttonMyFika)
         val newFikaButton = findViewById<Button>(R.id.buttonNewFika)
         val searchButton = findViewById<ImageButton>(R.id.searchButton)
         val notificationButton = findViewById<ImageButton>(R.id.notificationButton)
         val profileButton = findViewById<ImageButton>(R.id.profileButton)
 
-        // Button to launch 'My Fika' screen for user
         myFikaButton.setOnClickListener {
             val intent = Intent(this@MapsActivity, MyFikas::class.java)
             startActivity(intent)
         }
 
-        // Button to launch 'New Fika' screen for user.
         newFikaButton.setOnClickListener {
             val intent = Intent(this@MapsActivity, NewFika::class.java)
             startActivity(intent)
         }
 
-        // Button to launch 'Search' screen for user.
         searchButton.setOnClickListener {
             val intent = Intent(this@MapsActivity, SearchScreen::class.java)
             startActivity(intent)
         }
 
-        // Button to launch 'Notification' screen for user.
         notificationButton.setOnClickListener {
             val intent = Intent(this@MapsActivity, NotificationScreen::class.java)
             startActivity(intent)
         }
 
-        // Button to launch 'Profile' screen for user.
         profileButton.setOnClickListener {
             val intent = Intent(this@MapsActivity, ProfileScreen::class.java)
             startActivity(intent)
         }
 
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        locationRequest = LocationRequest.create().apply {
+            interval = 10000
+            fastestInterval = 5000
+            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+        }
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                for (location in locationResult.locations) {
+                    val userLocation = LatLng(location.latitude, location.longitude)
+
+                    // Create a custom marker icon with black color
+                    val markerIcon = BitmapDescriptorFactory.fromResource(R.drawable.black_marker_icon)
+
+                    // Create a marker options object and set its properties
+                    val markerOptions = MarkerOptions()
+                        .position(userLocation)
+                        .title("User's Location")
+                        .snippet("Additional information about the location")
+                        .icon(markerIcon)
+
+                    // Add the marker to the map
+                    mMap.addMarker(markerOptions)
+
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 15f))
+                }
+            }
+        }
     }
 
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
+                mapFragment.getMapAsync(this)
+            } else {
+                Toast.makeText(this, "Location permission denied", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
 
-        // Get the current user ID
-        val currentUser = FirebaseAuth.getInstance().currentUser
-        val userId = currentUser?.uid
+        val mapStyleOptions = MapStyleOptions.loadRawResourceStyle(this, R.raw.map_style_light)
+        googleMap.setMapStyle(mapStyleOptions)
 
-        if (userId != null) {
-            // Retrieve the coordinates from Firestore
-            val db = FirebaseFirestore.getInstance()
-            val userRef = db.collection("Users").document(userId)
-            userRef.get()
-                .addOnSuccessListener { document ->
-                    if (document != null && document.exists()) {
-                        // Retrieve the coordinates from the document
-                        val coordinatesString = document.getString("coordinates")
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
+                location?.let {
+                    val userLocation = LatLng(location.latitude, location.longitude)
 
-                        if (!coordinatesString.isNullOrEmpty()) {
-                            // Parse the latitude and longitude values from the coordinates string
-                            val coordinates = coordinatesString.split(",")
-                            if (coordinates.size == 2) {
-                                val latitude = coordinates[0].toDoubleOrNull()
-                                val longitude = coordinates[1].toDoubleOrNull()
+                    // Create a custom marker icon with black color
+                    val markerIcon = BitmapDescriptorFactory.fromResource(R.drawable.black_marker_icon)
 
-                                if (latitude != null && longitude != null) {
-                                    // Create a LatLng object with the retrieved coordinates
-                                    val userLocation = LatLng(latitude, longitude)
+                    // Create a marker options object and set its properties
+                    val markerOptions = MarkerOptions()
+                        .position(userLocation)
+                        .title("User's Location")
+                        .snippet("Additional information about the location")
+                        .icon(markerIcon)
 
-                                    // Add a marker at the user's location and move the camera
-                                    mMap.addMarker(MarkerOptions().position(userLocation).title("User's Location"))
-                                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 12f))
-                                } else {
-                                    Toast.makeText(this@MapsActivity, "Invalid coordinates format", Toast.LENGTH_SHORT).show()
-                                }
-                            } else {
-                                Toast.makeText(this@MapsActivity, "Invalid coordinates format", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    }
+                    // Add the marker to the map
+                    mMap.addMarker(markerOptions)
+
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 15f))
                 }
-                .addOnFailureListener {
-                    Toast.makeText(this@MapsActivity, "Address retrieval unsuccessful", Toast.LENGTH_SHORT).show()
-                }
+            }
+        } else {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION),
+                LOCATION_PERMISSION_REQUEST_CODE
+            )
         }
     }
 
 
 
 
-
-
-
-
-    /**
-     * Overrides the `onCreateOptionsMenu' method of the activity to initialize and set up the menu.
-     *
-     * @param menu The menu being initialized.
-     */
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menu.add("Logout")
         return true
     }
 
-    /**
-     * Overrides the `onOptionsItemSelected` method of the activity to handle menu item selection.
-     *
-     * @param item The selected menu item.
-     * @return Boolean value indicating whether the item selection is handled.
-     */
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (item.title == "Logout") {
             Firebase.auth.signOut()
@@ -177,14 +197,38 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         return super.onOptionsItemSelected(item)
     }
 
-    /**
-     * Navigates the user to Login Activity.
-     *
-     */
     private fun navigateToLogin() {
         val intent = Intent(this, WelcomeScreen::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
         startActivity(intent)
         finish()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        startLocationUpdates()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        stopLocationUpdates()
+    }
+
+    private fun startLocationUpdates() {
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            fusedLocationClient.requestLocationUpdates(
+                locationRequest,
+                locationCallback,
+                null
+            )
+        }
+    }
+
+    private fun stopLocationUpdates() {
+        fusedLocationClient.removeLocationUpdates(locationCallback)
     }
 }

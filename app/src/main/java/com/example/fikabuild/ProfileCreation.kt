@@ -27,7 +27,7 @@ import java.io.IOException
 data class UserProfile(
     val username: String,
     val bio: String,
-    val coordinates: String,
+    val address: String,
 )
 
 /**
@@ -73,31 +73,26 @@ class ProfileCreation : AppCompatActivity() {
             val bio = editTextBio.text.toString()
             val address = editTextAddress.text.toString()
 
-            // Convert address to coordinates using Geocoding API
-            convertAddressToCoordinates(address) { coordinates ->
-                if (coordinates != null) {
-                    val userProfile = UserProfile(username, bio, coordinates)
+            val userProfile = UserProfile(username, bio, address)
 
-                    // Save the user profile data to Firestore
-                    usersCollection.document(username)
-                        .set(userProfile)
-                        .addOnSuccessListener {
-                            // Profile data saved successfully, user brought to MapsActivity screen
-                            val intent = Intent(this@ProfileCreation, MapsActivity::class.java)
-                            startActivity(intent)
-                        }
-                        .addOnFailureListener {
-                            // Error message displayed for failure to save profile data
-                            Toast.makeText(this@ProfileCreation, "Profile failed to save, please try again", Toast.LENGTH_SHORT).show()
-                        }
-                } else {
-                    // Error message displayed for failure to convert address to coordinates
-                    Toast.makeText(this@ProfileCreation, "Address failed to save, please try again", Toast.LENGTH_SHORT).show()
+            // Save the user profile data to Firestore
+            usersCollection.document(username)
+                .set(userProfile)
+                .addOnSuccessListener {
+                    // Profile data saved successfully, user brought to MapsActivity screen
+                    val intent = Intent(this@ProfileCreation, MapsActivity::class.java)
+                    startActivity(intent)
                 }
-            }
+                .addOnFailureListener {
+                    // Error message displayed for failure to save profile data
+                    Toast.makeText(
+                        this@ProfileCreation,
+                        "Profile failed to save, please try again",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
         }
     }
-
     /**
      * Overrides the `onOptionsItemSelected` method to handle menu item selections.
      *
@@ -113,57 +108,6 @@ class ProfileCreation : AppCompatActivity() {
             }
             else -> super.onOptionsItemSelected(item)
         }
-    }
-
-    /**
-     * Function that converts the Address supplied by the user to coordinates that are stored in the database.
-     *
-     * @param address The address to convert to coordinates.
-     * @param callback A callback function that receives the coordinate value as a string. Passes `null` if conversion fails.
-     */
-    private fun convertAddressToCoordinates(address: String, callback: (String?) -> Unit) {
-        val apiKey = "AIzaSyAV-HDST6dG9xdv55CaIRIwmY2jbKXy-OE"
-        val encodedAddress = Uri.encode(address)
-        val url = "https://maps.googleapis.com/maps/api/geocode/json?address=$encodedAddress&key=$apiKey"
-
-        val client = OkHttpClient()
-        val request = Request.Builder()
-            .url(url)
-            .build()
-
-        client.newCall(request).enqueue(object : okhttp3.Callback {
-            override fun onResponse(call: okhttp3.Call, response: Response) {
-                val responseBody = response.body?.string()
-                val coordinates = responseBody?.let { parseCoordinatesFromResponse(it) }
-                callback(coordinates)
-            }
-
-            override fun onFailure(call: okhttp3.Call, e: IOException) {
-                callback(null)
-            }
-        })
-    }
-
-    /**
-     * Parses the coordinates from the response body obtained from the geocoding API.
-     *
-     * @param responseBody The response body obtained from the geocoding API as a string.
-     * @return The coordinate value as a string in the format "latitude,longitude". Returns `null` if no coordinates are found.
-     */
-    private fun parseCoordinatesFromResponse(responseBody: String): String? {
-        val jsonObject = JSONObject(responseBody)
-        val resultsArray = jsonObject.getJSONArray("results")
-
-        if (resultsArray.length() > 0) {
-            val resultObject = resultsArray.getJSONObject(0)
-            val geometryObject = resultObject.getJSONObject("geometry")
-            val locationObject = geometryObject.getJSONObject("location")
-            val latitude = locationObject.getDouble("lat")
-            val longitude = locationObject.getDouble("lng")
-            return "$latitude,$longitude"
-        }
-
-        return null
     }
 }
 

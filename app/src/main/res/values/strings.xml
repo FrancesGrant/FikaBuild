@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">FikaBuild</string>
     <string name="title_activity_maps">MapsActivity</string>
+    <string name="map_id">1ce98106223b11c1</string>
 </resources>

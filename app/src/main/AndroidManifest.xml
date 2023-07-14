@@ -6,6 +6,9 @@
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
 
     <application
         android:allowBackup="true"
@@ -30,7 +33,7 @@
         -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyAV-HDST6dG9xdv55CaIRIwmY2jbKXy-OE" />
+            android:value="AIzaSyAeDWvB01kaTU2ZpIm3qT2ueNbmiEYfDLs" />
 
         <activity
             android:name=".MapsActivity"
