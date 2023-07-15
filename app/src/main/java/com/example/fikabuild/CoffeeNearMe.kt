@@ -20,6 +20,11 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.net.PlacesClient
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.*
 import org.json.JSONObject
 import java.io.IOException
@@ -43,23 +48,8 @@ class CoffeeNearMe : AppCompatActivity() {
         Places.initialize(applicationContext, "AIzaSyAeDWvB01kaTU2ZpIm3qT2ueNbmiEYfDLs")
         placesClient = Places.createClient(this)
 
-
         binding = ActivityMapsBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        // Check if location permission is granted
-        if (ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            // Request location permission from the user
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION),
-                LOCATION_PERMISSION_REQUEST_CODE
-            )
-        }
 
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
@@ -67,7 +57,6 @@ class CoffeeNearMe : AppCompatActivity() {
             onMapReady(googleMap)
         }
 
-        // Toolbar for navigation
         val toolbar = findViewById<Toolbar>(R.id.customActionBar)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayShowTitleEnabled(false)
@@ -83,26 +72,22 @@ class CoffeeNearMe : AppCompatActivity() {
             override fun onLocationResult(locationResult: LocationResult) {
                 for (location in locationResult.locations) {
                     val userLocation = LatLng(location.latitude, location.longitude)
-
-                    // Create a custom marker icon with black color
-                    val markerIcon =
-                        BitmapDescriptorFactory.fromResource(R.drawable.black_marker_icon)
-
-                    // Create a marker options object and set its properties
+                    val markerIcon = BitmapDescriptorFactory.fromResource(R.drawable.black_marker_icon)
                     val markerOptions = MarkerOptions()
                         .position(userLocation)
                         .title("User's Location")
                         .snippet("Additional information about the location")
                         .icon(markerIcon)
 
-                    // Add the marker to the map
                     mMap.addMarker(markerOptions)
-
                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 15f))
+
+                    findNearbyCafes(userLocation)
                 }
             }
         }
     }
+
 
     private fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
@@ -148,7 +133,6 @@ class CoffeeNearMe : AppCompatActivity() {
     }
 
     private fun findNearbyCafes(userLocation: LatLng) {
-        // API request to fetch nearby cafes
         val url =
             "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${userLocation.latitude},${userLocation.longitude}&radius=1000&type=cafe&key=AIzaSyAeDWvB01kaTU2ZpIm3qT2ueNbmiEYfDLs"
 
@@ -168,12 +152,13 @@ class CoffeeNearMe : AppCompatActivity() {
 
             override fun onFailure(call: Call, e: IOException) {
                 runOnUiThread {
-                    Toast.makeText(this@CoffeeNearMe, "Failed to fetch cafes", Toast.LENGTH_SHORT)
-                        .show()
+                    Toast.makeText(this@CoffeeNearMe, "Failed to fetch cafes", Toast.LENGTH_SHORT).show()
                 }
             }
         })
     }
+
+// ...
 
     private fun parseCafes(responseBody: String?): List<Cafe> {
         val cafes = mutableListOf<Cafe>()
@@ -198,15 +183,11 @@ class CoffeeNearMe : AppCompatActivity() {
 
     private fun showCafes(cafes: List<Cafe>) {
         for (cafe in cafes) {
-            val cafeLatLng = LatLng(
-                cafe.latitude,
-                cafe.longitude
-            )
+            val cafeLatLng = LatLng(cafe.latitude, cafe.longitude)
 
             val markerOptions = MarkerOptions()
                 .position(cafeLatLng)
                 .title(cafe.name)
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
 
             mMap.addMarker(markerOptions)
         }
