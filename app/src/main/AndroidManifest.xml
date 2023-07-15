@@ -43,7 +43,7 @@
             android:name=".NewFika"
             android:exported="false" />
         <activity
-            android:name=".MyFikas"
+            android:name=".CoffeeNearMe"
             android:exported="false" />
         <activity
             android:name=".ProfileScreen"

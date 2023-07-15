@@ -83,7 +83,7 @@
         app:layout_constraintStart_toEndOf="@+id/notificationButton" />
 
     <Button
-        android:id="@+id/buttonMyFika"
+        android:id="@+id/buttonCoffeeNearMe"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginLeft="60sp"

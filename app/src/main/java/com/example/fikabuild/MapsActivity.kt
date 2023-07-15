@@ -1,11 +1,9 @@
 package com.example.fikabuild
 
 import android.Manifest
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
-import android.location.LocationManager
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -63,14 +61,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayShowTitleEnabled(false)
 
-        val myFikaButton = findViewById<Button>(R.id.buttonMyFika)
+        val coffeeNearMeButton = findViewById<Button>(R.id.buttonCoffeeNearMe)
         val newFikaButton = findViewById<Button>(R.id.buttonNewFika)
         val searchButton = findViewById<ImageButton>(R.id.searchButton)
         val notificationButton = findViewById<ImageButton>(R.id.notificationButton)
         val profileButton = findViewById<ImageButton>(R.id.profileButton)
 
-        myFikaButton.setOnClickListener {
-            val intent = Intent(this@MapsActivity, MyFikas::class.java)
+        coffeeNearMeButton.setOnClickListener {
+            val intent = Intent(this@MapsActivity, CoffeeNearMe::class.java)
             startActivity(intent)
         }
 
@@ -179,9 +177,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             )
         }
     }
-
-
-
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menu.add("Logout")
