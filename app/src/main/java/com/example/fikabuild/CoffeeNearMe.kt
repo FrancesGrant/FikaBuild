@@ -5,14 +5,13 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Bundle
-import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.example.fikabuild.databinding.ActivityMapsBinding
+import com.example.fikabuild.databinding.ActivityCoffeeNearMeBinding
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -20,15 +19,9 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.net.PlacesClient
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Dispatchers.IO
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import okhttp3.*
 import org.json.JSONObject
 import java.io.IOException
-
 /**
  * Data class representing a cafe.
  *
@@ -46,7 +39,7 @@ class CoffeeNearMe : AppCompatActivity() {
 
     private val locationPermissionRequestCode = 123 // Request code for location permission
     private lateinit var mMap: GoogleMap // Google map object for displaying the map
-    private lateinit var binding: ActivityMapsBinding // Binding object for the activity_maps.xml layout
+    private lateinit var binding: ActivityCoffeeNearMeBinding // Binding object for the activity_coffee_near_me.xml layout
     private lateinit var fusedLocationClient: FusedLocationProviderClient // Client for retrieving the user's current location
     private lateinit var locationRequest: LocationRequest // Request object for location updates
     private lateinit var locationCallback: LocationCallback // Callback used for receiving location updates
@@ -64,8 +57,8 @@ class CoffeeNearMe : AppCompatActivity() {
         Places.initialize(applicationContext, "AIzaSyAeDWvB01kaTU2ZpIm3qT2ueNbmiEYfDLs")
         placesClient = Places.createClient(this)
 
-        // Inflates the layout file so it can be used.
-        binding = ActivityMapsBinding.inflate(layoutInflater)
+        // Inflates the layout file using the generated binding class.
+        binding = ActivityCoffeeNearMeBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         // Initialises a SupportMapFragment by finding the layout using its ID.

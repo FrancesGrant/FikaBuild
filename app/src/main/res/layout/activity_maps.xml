@@ -80,7 +80,7 @@
         android:src="@drawable/profile_light"
         android:contentDescription="Button to launch profile activity"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/notificationButton" />
+        app:layout_constraintStart_toEndOf="@+id/favouritesButton" />
 
     <Button
         android:id="@+id/buttonCoffeeNearMe"
