@@ -42,7 +42,7 @@ class SignUp : AppCompatActivity() {
         // Text inputs from user
         val emailEditText = findViewById<EditText>(R.id.editTextEmail)
         val passwordEditText = findViewById<EditText>(R.id.editTextPassword)
-        // Button to sign up
+        // Buttons
         val signUpButton = findViewById<Button>(R.id.signUpButton)
 
         /**
