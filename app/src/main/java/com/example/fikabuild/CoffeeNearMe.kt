@@ -4,8 +4,10 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
+import android.net.Uri
 import android.os.Bundle
 import android.view.MenuItem
+import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
@@ -44,6 +46,9 @@ class CoffeeNearMe : AppCompatActivity() {
     private lateinit var locationRequest: LocationRequest // Request object for location updates
     private lateinit var locationCallback: LocationCallback // Callback used for receiving location updates
     private lateinit var placesClient: PlacesClient // Client for interacting with Places API
+    private var selectedMarkerLocation: LatLng? = null // Variable to store the currently clicked marker location
+    private var selectedCafe: Cafe? = null // Variable to store selected cafe by user
+
 
     /**
      * Called when the activity is created or recreated.
@@ -74,6 +79,22 @@ class CoffeeNearMe : AppCompatActivity() {
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayShowTitleEnabled(false)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
+        // Buttons
+        val getDirectionButton = findViewById<Button>(R.id.getDirectionsButton)
+
+        getDirectionButton.setOnClickListener{
+            val cafe = selectedCafe
+            if (cafe != null){
+                // launch Google Maps with the selected marker's coordinates as the destination
+                val destinationUri = Uri.parse("google.navigation:q=${cafe.latitude},${cafe.longitude}")
+                val mapIntent = Intent(Intent.ACTION_VIEW, destinationUri)
+                mapIntent.setPackage("com.google.android.apps.maps")
+                startActivity(mapIntent)
+            } else {
+                Toast.makeText(this@CoffeeNearMe, "No cafe selected", Toast.LENGTH_SHORT).show()
+            }
+        }
 
         /**
          * Initializes the location-related variables and objects.
@@ -265,7 +286,19 @@ class CoffeeNearMe : AppCompatActivity() {
                 .position(cafeLatLng)
                 .title(cafe.name)
 
-            mMap.addMarker(markerOptions)
+            val marker = mMap.addMarker(markerOptions)
+
+            // Set the marker's tag as the cafe object
+            if (marker != null) {
+                marker.tag = cafe
+            }
+        }
+
+        // Set the marker click listener
+        mMap.setOnMarkerClickListener { marker ->
+            selectedCafe = marker.tag as? Cafe
+            marker.showInfoWindow()
+            true // Return true to consume the click event
         }
     }
 

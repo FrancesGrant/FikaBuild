@@ -66,8 +66,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Initialises a SupportMapFragment by finding the layout using its ID.
         // getMapAsync retrieves the Google Map object asynchronously and notifies when complete.
-        val mapFragment = supportFragmentManager
-            .findFragmentById(R.id.map) as SupportMapFragment
+        val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
         // Toolbar for navigation
@@ -94,7 +93,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
          * Sets an OnClickListener on the newFikaButton button to start the functionality that finds coffee places between two addresses.
          */
         newFikaButton.setOnClickListener {
-            val intent = Intent(this@MapsActivity, NewFika::class.java)
+            val intent = Intent(this@MapsActivity, StartNewFika::class.java)
             startActivity(intent)
         }
 

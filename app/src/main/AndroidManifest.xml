@@ -39,6 +39,10 @@
             android:name=".MapsActivity"
             android:exported="false"
             android:label="@string/title_activity_maps" />
+
+        <activity android:name=".StartNewFika"
+            android:exported="false"/>
+
         <activity
             android:name=".NewFika"
             android:exported="false" />
