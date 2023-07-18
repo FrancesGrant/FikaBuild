@@ -20,7 +20,6 @@ import com.google.firebase.ktx.Firebase
 
 class SignUp : AppCompatActivity() {
 
-    // Class-level variables
     private lateinit var auth: FirebaseAuth
 
     /**
@@ -47,6 +46,8 @@ class SignUp : AppCompatActivity() {
 
         /**
          * Sets an OnClickListener on the signUpButton to handle the sign up process.
+         * When clicked, the user is signed up and the main activity is launched.
+         * If unsuccessful, the user receives a toast message.
          */
         signUpButton.setOnClickListener {
             val email = emailEditText.text.toString()

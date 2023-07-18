@@ -1,18 +1,16 @@
 package com.example.fikabuild
 
-import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.location.Location
+import android.net.Uri
 import android.os.Bundle
 import android.view.MenuItem
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import com.example.fikabuild.databinding.ActivityNewFikaBinding
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -25,10 +23,6 @@ import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.net.PlacesClient
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import okhttp3.*
 import org.json.JSONObject
 import java.io.IOException
@@ -44,6 +38,7 @@ class NewFika : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var locationCallback: LocationCallback // Callback used for receiving location updates
     private lateinit var placesClient: PlacesClient // Client for interacting with Places API
     private lateinit var midpoint: LatLng // Midpoint passed as an intent extra from StartNewFika activity
+    private var selectedCafe: Cafe? = null // Variable to store selected cafe by user
 
     /**
      * Called when the activity is created or recreated.
@@ -77,6 +72,44 @@ class NewFika : AppCompatActivity(), OnMapReadyCallback {
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayShowTitleEnabled(false)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        val toolbarTitle = findViewById<TextView>(R.id.toolbarTitle)
+
+        // Buttons
+        val shareButton = findViewById<Button>(R.id.shareButton)
+
+        /**
+         * Sets a click listener for the shareButton.
+         * When clicked, it launches SMS app with the selected marker's coordinates as the destination
+         * in a Google Map link and a pre-loaded message for the recipient.
+         *
+         */
+        shareButton.setOnClickListener{
+            // Assigns the clicked selected cafe object to a local variable
+            val cafe = selectedCafe
+            if (cafe != null) {
+                // Variables to store properties of the clicked cafe
+                val cafeName = cafe.name
+                val googleMapsLink = "https://maps.google.com/?q=${cafe.latitude},${cafe.longitude}"
+                val message = "Let's meet for a coffee at $cafeName. Here's the link: $googleMapsLink"
+                // Variable to store the entered phone number
+                val phoneNumberEditText = findViewById<EditText>(R.id.editTextPhone)
+                val phoneNumber = phoneNumberEditText.text.toString()
+                // Create an intent to send a pre-populated SMS messaged
+                val uri = Uri.parse("smsto:$phoneNumber") // Create the URI for sending an SMS
+                val intent = Intent(Intent.ACTION_SENDTO, uri)
+                intent.putExtra("sms_body", message)
+                startActivity(intent)
+            }
+        }
+
+        /**
+         * Sets a click listener for the toolbarTitle.
+         * When clicked, it brings the user back to the home screen which is the MapsActivity.
+         */
+        toolbarTitle.setOnClickListener{
+            val intent = Intent(this@NewFika, MapsActivity::class.java)
+            startActivity(intent)
+        }
 
 
         /**
@@ -106,7 +139,9 @@ class NewFika : AppCompatActivity(), OnMapReadyCallback {
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 for (location in locationResult.locations) {
+                    // Variable to store users location
                     val userLocation = LatLng(location.latitude, location.longitude)
+                    // Create custom marker
                     val markerIcon =
                         BitmapDescriptorFactory.fromResource(R.drawable.black_marker_icon)
                     val markerOptions = MarkerOptions()
@@ -123,30 +158,13 @@ class NewFika : AppCompatActivity(), OnMapReadyCallback {
                 }
             }
         }
-
-//        searchButton.setOnClickListener {
-//            GlobalScope.launch(Dispatchers.Main) {
-//                val apiKey = "AIzaSyAeDWvB01kaTU2ZpIm3qT2ueNbmiEYfDLs"
-//                val firstLocation =
-//                    convertAddressToCoordinates(editTextLocationA.text.toString(), apiKey)
-//                val secondLocation =
-//                    convertAddressToCoordinates(editTextLocationB.text.toString(), apiKey)
-//
-//                if (firstLocation != null && secondLocation != null) {
-//                    // Calculate the midpoint using the coordinates
-//                    val midpoint = calculateMidpoint(firstLocation, secondLocation)
-//
-//                    // Display the midpoint on the map and find nearby cafes
-//                    showMidpointOnMap(midpoint)
-//                    // findNearbyCafes(midpoint)
-//                    findNearbyCafes(midpoint)
-//                } else {
-//                    // Handle geocoding failure for either firstLocation or secondLocation
-//                }
-//            }
-//        }
     }
 
+    /**
+     * Finds nearby cafes using the provided midpoint coordinates and displays them on the map.
+     *
+     * @param midpoint The coordinates of the midpoint.
+     */
     private fun findNearbyCafes(midpoint: LatLng) {
         // Url to make the request to Google Places API for nearby cafes
         val url =
@@ -192,6 +210,8 @@ class NewFika : AppCompatActivity(), OnMapReadyCallback {
         })
     }
 
+
+
     /**
      * Parses the response body containing cafe data and returns a list of cafes.
      *
@@ -235,88 +255,12 @@ class NewFika : AppCompatActivity(), OnMapReadyCallback {
                 .position(cafeLatLng)
                 .title(cafe.name)
 
-            mMap.addMarker(markerOptions)
-        }
-    }
-
-    private fun showMidpointOnMap(midpoint: LatLng) {
-
-        // Clear existing markers on the map
-        mMap.clear()
-
-        // Create a custom marker icon with black color
-        val markerIcon =
-            BitmapDescriptorFactory.fromResource(R.drawable.black_marker_icon)
-
-        // Add a marker for the midpoint
-        val markerOptions = MarkerOptions()
-            .position(midpoint)
-            .title("Midpoint")
-            .snippet("This is the calculated midpoint")
-            .icon(markerIcon)
-
-        mMap.addMarker(markerOptions)
-
-        // Move the camera to the midpoint
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(midpoint, 15f))
-
-    }
-
-    /**
-     * Overrides the `onOptionsItemSelected` method of the activity to handle menu item selection.
-     *
-     * @param item The selected menu item.
-     * @return Boolean value indicating whether the item selection is handled.
-     */
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            android.R.id.home -> {
-                val intent = Intent(this@NewFika, StartNewFika::class.java)
-                startActivity(intent)
-                true
+            val marker = mMap.addMarker(markerOptions)
+            if (marker != null) {
+                marker.tag = cafe
             }
-            else -> super.onOptionsItemSelected(item)
         }
     }
-
-//    private suspend fun convertAddressToCoordinates(userAddress: String, apiKey: String): LatLng? {
-//        val client = OkHttpClient()
-//        val url =
-//            "https://maps.googleapis.com/maps/api/geocode/json?address=$userAddress&key=$apiKey"
-//
-//        val request = Request.Builder()
-//            .url(url)
-//            .build()
-//
-//        val response = withContext(Dispatchers.IO) {
-//            client.newCall(request).execute()
-//        }
-//
-//        val responseData = response.body?.string()
-//        response.close()
-//
-//        if (responseData != null) {
-//            val jsonObject = JSONObject(responseData)
-//            val results = jsonObject.getJSONArray("results")
-//
-//            if (results.length() > 0) {
-//                val location =
-//                    results.getJSONObject(0).getJSONObject("geometry").getJSONObject("location")
-//                val latitude = location.getDouble("lat")
-//                val longitude = location.getDouble("lng")
-//
-//                return LatLng(latitude, longitude)
-//            }
-//        }
-//
-//        return null
-//    }
-//
-//    private fun calculateMidpoint(firstLocation: LatLng, secondLocation: LatLng): LatLng {
-//        val latMid = (firstLocation.latitude + firstLocation.latitude) / 2.0
-//        val lngMid = (secondLocation.longitude + secondLocation.longitude) / 2.0
-//        return LatLng(latMid, lngMid)
-//    }
 
     /**
      * Callback method for the result of a permission request.
@@ -356,6 +300,18 @@ class NewFika : AppCompatActivity(), OnMapReadyCallback {
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
 
+        mMap.setOnMarkerClickListener { marker ->
+            // Retrieve the cafe associated with the clicked marker using the marker's tag
+            val cafe = marker.tag as? Cafe
+
+            // Assign the selected cafe to the selectedCafe variable
+            selectedCafe = cafe
+
+            false // allow default behaviour of info window
+            marker.showInfoWindow() // Display the marker's info window
+            true // Return true to consume the click event
+        }
+
         // Loads custom map style
         val mapStyleOptions = MapStyleOptions.loadRawResourceStyle(this, R.raw.map_style_light)
         googleMap.setMapStyle(mapStyleOptions)
@@ -381,6 +337,23 @@ class NewFika : AppCompatActivity(), OnMapReadyCallback {
 
         // Show nearby cafes
         findNearbyCafes(midpoint)
+    }
+
+    /**
+     * Overrides the `onOptionsItemSelected` method of the activity to handle menu item selection.
+     *
+     * @param item The selected menu item.
+     * @return Boolean value indicating whether the item selection is handled.
+     */
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            android.R.id.home -> {
+                val intent = Intent(this@NewFika, StartNewFika::class.java)
+                startActivity(intent)
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
     }
 }
 

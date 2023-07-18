@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.MenuItem
 import android.widget.Button
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
@@ -46,7 +47,6 @@ class CoffeeNearMe : AppCompatActivity() {
     private lateinit var locationRequest: LocationRequest // Request object for location updates
     private lateinit var locationCallback: LocationCallback // Callback used for receiving location updates
     private lateinit var placesClient: PlacesClient // Client for interacting with Places API
-    private var selectedMarkerLocation: LatLng? = null // Variable to store the currently clicked marker location
     private var selectedCafe: Cafe? = null // Variable to store selected cafe by user
 
 
@@ -58,7 +58,7 @@ class CoffeeNearMe : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Initialises the Places API with the provided API key and creates a PlacesClient instance.
+        // Initialises the Places API with the API key and creates a PlacesClient instance.
         Places.initialize(applicationContext, "AIzaSyAeDWvB01kaTU2ZpIm3qT2ueNbmiEYfDLs")
         placesClient = Places.createClient(this)
 
@@ -79,10 +79,16 @@ class CoffeeNearMe : AppCompatActivity() {
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayShowTitleEnabled(false)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        val toolbarTitle = findViewById<TextView>(R.id.toolbarTitle)
 
         // Buttons
         val getDirectionButton = findViewById<Button>(R.id.getDirectionsButton)
 
+        /**
+         * Sets a click listener for the getDirectionButton.
+         * When clicked, it launches Google Maps with the selected marker's coordinates as the destination.
+         * If no cafe is selected, it displays a toast message indicating that no cafe is selected.
+         */
         getDirectionButton.setOnClickListener{
             val cafe = selectedCafe
             if (cafe != null){
@@ -94,6 +100,15 @@ class CoffeeNearMe : AppCompatActivity() {
             } else {
                 Toast.makeText(this@CoffeeNearMe, "No cafe selected", Toast.LENGTH_SHORT).show()
             }
+        }
+
+        /**
+         * Sets a click listener for the toolbarTitle in the toolbar.
+         * When clicked, it loads the MapsActivity screen which acts as the user's homepage.
+         */
+        toolbarTitle.setOnClickListener{
+            val intent = Intent(this@CoffeeNearMe, MapsActivity::class.java)
+            startActivity(intent)
         }
 
         /**
@@ -282,10 +297,12 @@ class CoffeeNearMe : AppCompatActivity() {
         for (cafe in cafes) {
             val cafeLatLng = LatLng(cafe.latitude, cafe.longitude)
 
+            // Create a marker options object and set its properties
             val markerOptions = MarkerOptions()
                 .position(cafeLatLng)
                 .title(cafe.name)
 
+            // Add marker to the map
             val marker = mMap.addMarker(markerOptions)
 
             // Set the marker's tag as the cafe object

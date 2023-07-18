@@ -6,14 +6,14 @@
     android:layout_height="match_parent"
     tools:context=".NewFika">
 
-        <fragment
-            android:id="@+id/map"
-            android:name="com.google.android.gms.maps.SupportMapFragment"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toTopOf="@id/customActionBar"
-            tools:layout="@layout/activity_maps" />
+            <fragment
+                android:id="@+id/map"
+                android:name="com.google.android.gms.maps.SupportMapFragment"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toTopOf="@id/customActionBar"
+                tools:layout="@layout/activity_maps" />
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/customActionBar"
@@ -25,6 +25,7 @@
         app:title="">
 
         <TextView
+            android:id="@+id/toolbarTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
@@ -49,7 +50,7 @@
         android:background="@drawable/round_button"
         android:backgroundTint="#000000"
         android:fontFamily="sans-serif"
-        android:text="Share"
+        android:text="Share with a friend"
         android:textAllCaps="false"
         android:textColor="#FFFFFF"
         android:textSize="20sp"
@@ -59,6 +60,20 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintVertical_bias="0.982" />
 
+    <EditText
+        android:id="@+id/editTextPhone"
+        android:layout_width="320dp"
+        android:layout_height="48dp"
+        android:layout_marginBottom="32dp"
+        android:ems="10"
+        android:inputType="phone"
+        android:hint="Enter phone number:"
+        android:paddingLeft="16dp"
+        android:background="@drawable/round_corner_address_input"
+        app:layout_constraintBottom_toTopOf="@+id/shareButton"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

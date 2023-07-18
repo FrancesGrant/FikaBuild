@@ -45,7 +45,7 @@
         android:textAllCaps="false"
         android:textColor="#FFFFFF"
         android:textSize="20sp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/editTextLocationB"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
@@ -55,14 +55,14 @@
         android:id="@+id/editTextLocationB"
         android:layout_width="320dp"
         android:layout_height="48dp"
-        android:layout_marginBottom="40dp"
+        android:layout_marginTop="20dp"
         android:background="@drawable/round_corner_text_input"
         android:ems="10"
         android:hint="Address B:"
         android:inputType="text"
         android:paddingLeft="16dp"
         android:text=""
-        app:layout_constraintBottom_toTopOf="@+id/searchButton"
+        app:layout_constraintTop_toBottomOf="@+id/editTextLocationA"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent" />
@@ -71,13 +71,14 @@
         android:id="@+id/editTextLocationA"
         android:layout_width="320dp"
         android:layout_height="48dp"
-        android:layout_marginBottom="15sp"
+        android:layout_marginTop="15sp"
         android:background="@drawable/round_corner_text_input"
         android:hint="Address 1:"
         android:inputType="text"
         android:paddingLeft="16dp"
         android:text=""
         app:layout_constraintBottom_toTopOf="@+id/editTextLocationB"
+        app:layout_constraintTop_toBottomOf="@+id/textViewSignup"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent" />
@@ -100,7 +101,7 @@
         android:id="@+id/textViewSignup"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="15dp"
         android:paddingStart="60dp"
         android:paddingEnd="60dp"
         android:text="To discover cafes, enter two addresses below."
@@ -109,9 +110,10 @@
         android:textSize="20sp"
         app:layout_constraintBottom_toTopOf="@+id/editTextLocationA"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textViewLetsFika" />
+        app:layout_constraintTop_toBottomOf="@+id/textViewLetsFika"
+        app:layout_constraintVertical_bias="0.128" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
