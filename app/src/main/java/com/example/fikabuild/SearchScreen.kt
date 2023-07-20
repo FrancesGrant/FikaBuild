@@ -1,13 +1,12 @@
 package com.example.fikabuild
 
-
-import android.content.ContentValues
+import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
-import android.os.Environment
-import android.provider.MediaStore
 import android.view.LayoutInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
@@ -18,6 +17,11 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.MultiTransformation
+import com.bumptech.glide.load.resource.bitmap.CenterCrop
+import com.bumptech.glide.load.resource.bitmap.RoundedCorners
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
+import com.bumptech.glide.request.RequestOptions
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.PhotoMetadata
 import com.google.android.libraries.places.api.model.Place
@@ -34,7 +38,13 @@ import java.io.FileOutputStream
 import java.io.OutputStream
 
 // Data class to store the cafe name and address
-data class CafeData(val name: String, val address: String, val imageUri: String)
+data class CafeData(
+    val name: String,
+    val address: String,
+    val imageUri: String,
+    val firstButtonAction: () -> Unit
+)
+
 class SearchScreen : AppCompatActivity() {
 
     private lateinit var placesClient: PlacesClient // Client for interacting with Places API
@@ -108,7 +118,13 @@ class SearchScreen : AppCompatActivity() {
 
                                 // Check if the photoUri is not null before loading the image with Glide
                                 if (photoUri != null) {
-                                    val cafeData = CafeData(name!!, address!!, photoUri)
+                                    val cafeData = CafeData(
+                                        name!!,
+                                        address!!,
+                                        photoUri,
+                                        firstButtonAction = {
+
+                                        })
                                     cafeList.add(cafeData)
                                     // Notify the adapter of the data change on the main thread
                                     cafeAdapter.notifyDataSetChanged()
@@ -141,6 +157,7 @@ class SearchScreen : AppCompatActivity() {
                 ).show()
             }
     }
+
 
     private suspend fun getPhotoUri(photoMetadata: PhotoMetadata): String? {
         val photoRequest = FetchPhotoRequest.builder(photoMetadata)
@@ -179,10 +196,6 @@ class SearchScreen : AppCompatActivity() {
         return contentUri?.toString()
     }
 
-
-
-
-
     // Function to save Bitmap to a file
     private fun saveBitmapToFile(bitmap: Bitmap, file: File) {
         var outputStream: OutputStream? = null
@@ -194,6 +207,22 @@ class SearchScreen : AppCompatActivity() {
         }
     }
 
+    /**
+     * Overrides the `onOptionsItemSelected` method of the activity to handle menu item selection.
+     *
+     * @param item The selected menu item.
+     * @return Boolean value indicating whether the item selection is handled.
+     */
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            android.R.id.home -> {
+                val intent = Intent(this@SearchScreen, MapsActivity::class.java)
+                startActivity(intent)
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
 
     // Adapter class for RecyclerView
     class CafeAdapter(private val cafeList: List<CafeData>) :
@@ -202,12 +231,9 @@ class SearchScreen : AppCompatActivity() {
         // ViewHolder class for the RecyclerView item
         class CafeViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             val imageView: ImageView = itemView.findViewById(R.id.imageView)
-
-            // TextView to display the cafe name
             val nameTextView: TextView = itemView.findViewById(R.id.nameTextView)
-
-            // TextView to display cafe address
             val addressTextView: TextView = itemView.findViewById(R.id.addressTextView)
+            val firstImageButton: ImageButton = itemView.findViewById(R.id.firstImageButton)
         }
 
         // Create ViewHolder for each item in the RecyclerView
@@ -228,16 +254,52 @@ class SearchScreen : AppCompatActivity() {
 
             // Check if the imageUri is valid before loading the image
             if (cafe.imageUri != null && cafe.imageUri.isNotEmpty()) {
-                // Load the image using Glide and the content URI
-                Glide.with(holder.itemView)
-                    .load(Uri.parse(cafe.imageUri)) // Parse the content URI
-                    .into(holder.imageView)
+                // Load the image using Glide and the content URI with rounded corners
+                loadRoundedImageWithGlide(holder.imageView, cafe.imageUri, holder.itemView.context)
             } else {
-                // Set a placeholder image
+                // Set a placeholder image with rounded corners
                 Glide.with(holder.itemView)
-                    .load(R.drawable.default_image) // Replace with your placeholder image resource
+                    .load(R.drawable.rounded_placeholder) // Replace with your placeholder image resource
+                    .apply(
+                        RequestOptions.bitmapTransform(
+                            MultiTransformation(
+                                CenterCrop(),
+                                RoundedCorners(
+                                    holder.itemView.context.resources.getDimensionPixelSize(
+                                        R.dimen.rounded_corners
+                                    )
+                                )
+                            )
+                        )
+                    )
                     .into(holder.imageView)
             }
+
+            // Set OnClickListener for the first image button
+            holder.firstImageButton.setOnClickListener {
+                cafe.firstButtonAction.invoke()
+            }
+
+        }
+
+        // Function to load images with rounded corners using Glide and RoundedCornersTransformation
+        private fun loadRoundedImageWithGlide(
+            imageView: ImageView,
+            imageUrl: String,
+            context: Context
+        ) {
+            Glide.with(context)
+                .load(imageUrl)
+                .apply(
+                    RequestOptions.bitmapTransform(
+                        MultiTransformation(
+                            CenterCrop(),
+                            RoundedCorners(context.resources.getDimensionPixelSize(R.dimen.rounded_corners))
+                        )
+                    )
+                )
+                .transition(DrawableTransitionOptions.withCrossFade())
+                .into(imageView)
         }
 
         // Return the number of items in the list
@@ -246,7 +308,3 @@ class SearchScreen : AppCompatActivity() {
         }
     }
 }
-
-
-
-

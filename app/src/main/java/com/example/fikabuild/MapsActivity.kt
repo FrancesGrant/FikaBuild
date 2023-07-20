@@ -109,7 +109,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
          * Sets an OnClickListener on the favouritesButton to start the functionality that allows users to review their favourite coffee places.
          */
         favouritesButton.setOnClickListener {
-            val intent = Intent(this@MapsActivity, NotificationScreen::class.java)
+            val intent = Intent(this@MapsActivity, FavouriteScreen::class.java)
             startActivity(intent)
         }
 

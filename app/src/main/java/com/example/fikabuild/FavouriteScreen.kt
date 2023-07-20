@@ -3,14 +3,13 @@ package com.example.fikabuild
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.widget.Toolbar
 
-class NotificationScreen : AppCompatActivity() {
+class FavouriteScreen : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_notification_screen)
+        setContentView(R.layout.activity_favourite_screen)
 
         // Toolbar for navigation
         val toolbar = findViewById<Toolbar>(R.id.customActionBar)
@@ -28,21 +27,11 @@ class NotificationScreen : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             android.R.id.home -> {
-                val intent = Intent(this@NotificationScreen, MapsActivity::class.java)
+                val intent = Intent(this@FavouriteScreen, MapsActivity::class.java)
                 startActivity(intent)
                 true
             }
             else -> super.onOptionsItemSelected(item)
         }
-    }
-
-    /**
-     * Overrides the `onCreateOptionsMenu' method of the activity to initialize and set up the menu.
-     *
-     * @param menu The menu being initialized.
-     */
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menu.add("Logout")
-        return true
     }
 }
