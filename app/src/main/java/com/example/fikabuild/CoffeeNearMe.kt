@@ -38,7 +38,7 @@ data class Cafe(val name: String, val latitude: Double, val longitude: Double)
  * Activity that displays nearby coffee locations.
  * It allows users to find coffee near them and receive directions.
  */
-class CoffeeNearMe : AppCompatActivity() {
+open class CoffeeNearMe : AppCompatActivity() {
 
     private val locationPermissionRequestCode = 123 // Request code for location permission
     private lateinit var mMap: GoogleMap // Google map object for displaying the map
@@ -138,6 +138,7 @@ class CoffeeNearMe : AppCompatActivity() {
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 for (location in locationResult.locations) {
+                    // Creates a marker using the coordinates of the user's location
                     val userLocation = LatLng(location.latitude, location.longitude)
                     val markerIcon = BitmapDescriptorFactory.fromResource(R.drawable.black_marker_icon)
                     val markerOptions = MarkerOptions()
@@ -145,7 +146,6 @@ class CoffeeNearMe : AppCompatActivity() {
                         .title("User's Location")
                         .snippet("Additional information about the location")
                         .icon(markerIcon)
-
                     // Adds marker to map
                     mMap.addMarker(markerOptions)
                     // Moves camera to marker
@@ -164,37 +164,32 @@ class CoffeeNearMe : AppCompatActivity() {
      */
     private fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
-
         // Loads custom map style
         val mapStyleOptions = MapStyleOptions.loadRawResourceStyle(this, R.raw.map_style_light)
         googleMap.setMapStyle(mapStyleOptions)
-
         // Checks is ACCESS_COARSE_LOCATION permission is granted
         if (ContextCompat.checkSelfPermission(
                 this,
                 Manifest.permission.ACCESS_COARSE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
         ) {
+            // Retrieves the last known location from the user
             fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
                 location?.let {
                     val userLocation = LatLng(location.latitude, location.longitude)
-
                     // Create a custom marker icon with black color
                     val markerIcon =
                         BitmapDescriptorFactory.fromResource(R.drawable.black_marker_icon)
-
                     // Create a marker options object and set its properties
                     val markerOptions = MarkerOptions()
                         .position(userLocation)
                         .title("User's Location")
                         .snippet("Additional information about the location")
                         .icon(markerIcon)
-
                     // Add the marker to the map
                     mMap.addMarker(markerOptions)
-
                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 15f))
-                    // Call the function to find nearby cafes
+                    // Calls the function to find nearby cafes
                     findNearbyCafes(userLocation)
                 }
             }
@@ -217,7 +212,6 @@ class CoffeeNearMe : AppCompatActivity() {
         // Url to make the request to Google Places API for nearby cafes
         val url =
             "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${userLocation.latitude},${userLocation.longitude}&radius=1000&type=cafe&key=AIzaSyAeDWvB01kaTU2ZpIm3qT2ueNbmiEYfDLs"
-
         // Perform the HTTP request to the Google Places API
         val client = OkHttpClient()
         val request = Request.Builder()
@@ -238,6 +232,7 @@ class CoffeeNearMe : AppCompatActivity() {
              */
             override fun onResponse(call: Call, response: Response) {
                 val responseBody = response.body?.string()
+                // Calls parseCafes function that converts the JSON response into Cafe objects
                 val cafes = parseCafes(responseBody)
                 runOnUiThread {
                     showCafes(cafes)
@@ -246,6 +241,7 @@ class CoffeeNearMe : AppCompatActivity() {
 
             /**
              * Handles the failure of the HTTP request to fetch cafes.
+             * User receives the toast message indicating the failure.
              *
              * @param call The Call object representing the HTTP request.
              * @param e The IOException indicating the cause of the failure.
@@ -267,12 +263,10 @@ class CoffeeNearMe : AppCompatActivity() {
     private fun parseCafes(responseBody: String?): List<Cafe> {
         // List to hold objects of type 'Cafe'
         val cafes = mutableListOf<Cafe>()
-
         responseBody?.let {
             val jsonObject = JSONObject(it)
             val resultsArray = jsonObject.getJSONArray("results")
-
-            // Iterates over the resultsArray and extracts values from the JSON objects and create Cafe instances with them.
+            // Iterates over the resultsArray and extracts values from the JSON objects and create Cafe instances with them
             // Cafe instances are added to the Cafes list
             for (i in 0 until resultsArray.length()) {
                 val resultObject = resultsArray.getJSONObject(i)
@@ -284,7 +278,6 @@ class CoffeeNearMe : AppCompatActivity() {
                 cafes.add(Cafe(name, latitude, longitude))
             }
         }
-
         return cafes
     }
 
@@ -295,27 +288,24 @@ class CoffeeNearMe : AppCompatActivity() {
      */
     private fun showCafes(cafes: List<Cafe>) {
         for (cafe in cafes) {
+            // Variable to hold the location of the cafes
             val cafeLatLng = LatLng(cafe.latitude, cafe.longitude)
-
             // Create a marker options object and set its properties
             val markerOptions = MarkerOptions()
                 .position(cafeLatLng)
                 .title(cafe.name)
-
             // Add marker to the map
             val marker = mMap.addMarker(markerOptions)
-
             // Set the marker's tag as the cafe object
             if (marker != null) {
                 marker.tag = cafe
             }
         }
-
         // Set the marker click listener
         mMap.setOnMarkerClickListener { marker ->
             selectedCafe = marker.tag as? Cafe
             marker.showInfoWindow()
-            true // Return true to consume the click event
+            true
         }
     }
 
@@ -336,6 +326,7 @@ class CoffeeNearMe : AppCompatActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         // Check if request code matches the location permission request code
         if (requestCode == locationPermissionRequestCode) {
+            // If location permission is granted map is initialised
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 val mapFragment =
                     supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment

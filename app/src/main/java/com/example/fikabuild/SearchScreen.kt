@@ -1,27 +1,18 @@
 package com.example.fikabuild
 
-import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import android.net.Uri
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.MenuItem
-import android.view.View
-import android.view.ViewGroup
-import android.widget.*
+import android.widget.EditText
+import android.widget.ImageButton
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.MultiTransformation
-import com.bumptech.glide.load.resource.bitmap.CenterCrop
-import com.bumptech.glide.load.resource.bitmap.RoundedCorners
-import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
-import com.bumptech.glide.request.RequestOptions
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.PhotoMetadata
 import com.google.android.libraries.places.api.model.Place
@@ -29,6 +20,8 @@ import com.google.android.libraries.places.api.net.FetchPhotoRequest
 import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 import com.google.android.libraries.places.api.net.PlacesClient
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -37,25 +30,33 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
 
-// Data class to store the cafe name and address
-data class CafeData(
-    val name: String,
-    val address: String,
-    val imageUri: String,
-    val firstButtonAction: () -> Unit
-)
-
+/**
+ * Activity that allows the users to search for cafes to add to their favourites
+ */
 class SearchScreen : AppCompatActivity() {
 
-    private lateinit var placesClient: PlacesClient // Client for interacting with Places API
+    private lateinit var placesClient: PlacesClient // Client for interacting with the Places API
     private lateinit var cafeAdapter: CafeAdapter // Adapter for the RecyclerView
-    private val cafeList: MutableList<CafeData> = mutableListOf() // List to store the cafe search results
+    private val cafeList: MutableList<CafeData> = mutableListOf() // List of cafe's displayed in Recyclerview
+    private var userUid: String? = null // User ID for the current user
+    private lateinit var firestore: FirebaseFirestore // Firebase instance for database interaction
+    private lateinit var auth: FirebaseAuth // Firebase authentication for user authentication
 
+    /**
+     * Called when the activity is created or recreated.
+     *
+     * @param savedInstanceState The saved instance state bundle.
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_search_screen)
 
-        // Initialize the Places API with the API key and create a PlacesClient instance
+        // Initialise FirebaseAuth, FirebaseFirestore, and userUid
+        auth = FirebaseAuth.getInstance()
+        firestore = FirebaseFirestore.getInstance()
+        getUserUid()
+
+        // Initialise Google Places API
         Places.initialize(applicationContext, "AIzaSyAeDWvB01kaTU2ZpIm3qT2ueNbmiEYfDLs")
         placesClient = Places.createClient(this)
 
@@ -65,246 +66,269 @@ class SearchScreen : AppCompatActivity() {
         supportActionBar?.setDisplayShowTitleEnabled(false)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        // Text input
+        // Text inputs from user
         val searchEditText = findViewById<EditText>(R.id.searchEditText)
 
-        // Button
+        // Buttons
         val searchButton = findViewById<ImageButton>(R.id.searchUserButton)
 
-        // Declare the RecyclerView
+        /**
+         * Initializes the [cafeAdapter] for the [RecyclerView].
+         *
+         * The [CafeAdapter] is responsible for displaying the list of cafes in the [RecyclerView] and handling the
+         * favorite button click action.
+         *
+         * @param cafeList The list of cafes to be displayed in the [RecyclerView].
+         * @param onFavoriteButtonClickListener The callback to handle the favorite button click action.
+         */
+        cafeAdapter = CafeAdapter(cafeList) { cafe ->
+            // Handle the favorite button click action to add or remove from favourites
+            if (cafe.isFavorite) {
+                addToFavorites(cafe)
+                Toast.makeText(this, "Added to favorites", Toast.LENGTH_SHORT).show()
+            } else {
+                removeFromFavorites(cafe)
+                Toast.makeText(this, "Removed from favorites", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        // RecyclerViewer to display cafe items
         val cafeRecyclerView = findViewById<RecyclerView>(R.id.cafeRecyclerView)
         cafeRecyclerView.layoutManager = LinearLayoutManager(this)
-
-        // Create an instance of CafeAdapter and assign it to the cafeAdapter variable
-        cafeAdapter = CafeAdapter(cafeList)
         cafeRecyclerView.adapter = cafeAdapter
 
-        // Search button
+        /**
+         * Sets a click listener for searchButton.
+         * When clicked, searchCafe function is called with the text input from the user as the query.
+         */
         searchButton.setOnClickListener {
             val query = searchEditText.text.toString()
             searchCafes(query)
         }
     }
 
-    private fun searchCafes(query: String) {
-        val request = FindAutocompletePredictionsRequest.builder()
-            .setQuery(query)
-            .build()
-
-        placesClient.findAutocompletePredictions(request)
-            .addOnSuccessListener { response ->
-                cafeList.clear() // Clear the previous results
-
-                // Loop through the autocomplete predictions
-                for (prediction in response.autocompletePredictions) {
-                    val placeId = prediction.placeId
-                    // Fetch the place details using the placeId
-                    val placeRequest = FetchPlaceRequest.builder(
-                        placeId,
-                        listOf(Place.Field.NAME, Place.Field.ADDRESS, Place.Field.PHOTO_METADATAS)
-                    )
-                        .build()
-
-                    placesClient.fetchPlace(placeRequest)
-                        .addOnSuccessListener { fetchPlaceResponse ->
-                            val place = fetchPlaceResponse.place
-                            val name = place.name
-                            val address = place.address
-                            val photoMetadata = place.photoMetadatas?.get(0)
-
-                            // Use lifecycleScope.launch to run the suspend function in a coroutine scope
-                            lifecycleScope.launch {
-                                val photoUri = photoMetadata?.let { getPhotoUri(it) }
-
-                                // Check if the photoUri is not null before loading the image with Glide
-                                if (photoUri != null) {
-                                    val cafeData = CafeData(
-                                        name!!,
-                                        address!!,
-                                        photoUri,
-                                        firstButtonAction = {
-
-                                        })
-                                    cafeList.add(cafeData)
-                                    // Notify the adapter of the data change on the main thread
-                                    cafeAdapter.notifyDataSetChanged()
-                                } else {
-                                    // Handle the case where photoUri is null (e.g., photo not available)
-                                    Toast.makeText(
-                                        this@SearchScreen,
-                                        "Failed to load cafe photo",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            }
-                        }
-                        .addOnFailureListener {
-                            // Handle place fetch failure
-                            Toast.makeText(
-                                this@SearchScreen,
-                                "Failed to return cafe results",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                }
-            }
-            .addOnFailureListener {
-                // Handle autocomplete prediction fetch failure
-                Toast.makeText(
-                    this@SearchScreen,
-                    "Failed to predict cafe results",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-    }
-
-
-    private suspend fun getPhotoUri(photoMetadata: PhotoMetadata): String? {
-        val photoRequest = FetchPhotoRequest.builder(photoMetadata)
-            .setMaxWidth(500) // Set the maximum width of the image here if needed
-            .setMaxHeight(500) // Set the maximum height of the image here if needed
-            .build()
-
-        val photoResponse = placesClient.fetchPhoto(photoRequest).await()
-
-        // Check if the photoResponse contains a Bitmap
-        if (photoResponse.bitmap == null) {
-            return null // Return null if the response doesn't contain a Bitmap
+        /**
+        * Fetches the current user's unique identifier (UID) from Firebase Authentication.
+        */
+        private fun getUserUid() {
+            val currentUser = FirebaseAuth.getInstance().currentUser
+            userUid = currentUser?.uid
         }
-
-        // Save the Bitmap to a file and get its URI using FileProvider
-        val photoBitmap: Bitmap = photoResponse.bitmap
-
-        // Create a new file in the external cache directory
-        val photoFile = File(
-            applicationContext.cacheDir, // Use cache directory instead of external storage
-            "place_photo_${System.currentTimeMillis()}.jpg"
-        )
-
-        // Save the Bitmap to the file
-        withContext(Dispatchers.IO) {
-            saveBitmapToFile(photoBitmap, photoFile)
-        }
-
-        // Get the content URI for the saved photo file using FileProvider
-        val contentUri = FileProvider.getUriForFile(
-            applicationContext,
-            "com.example.fikabuild.fileprovider", // Update with your authority from the manifest
-            photoFile
-        )
-
-        return contentUri?.toString()
-    }
-
-    // Function to save Bitmap to a file
-    private fun saveBitmapToFile(bitmap: Bitmap, file: File) {
-        var outputStream: OutputStream? = null
-        try {
-            outputStream = FileOutputStream(file)
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
-        } finally {
-            outputStream?.close()
-        }
-    }
 
     /**
-     * Overrides the `onOptionsItemSelected` method of the activity to handle menu item selection.
+     * Searches for cafes based on the provided query using the Places API Autocomplete feature.
+     * The [query] is used to find autocomplete predictions for cafe names or addresses.
+     * The search results are fetched and displayed in the RecyclerView.
      *
-     * @param item The selected menu item.
-     * @return Boolean value indicating whether the item selection is handled.
+     * @param query The search query string to find cafes.
      */
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            android.R.id.home -> {
-                val intent = Intent(this@SearchScreen, MapsActivity::class.java)
-                startActivity(intent)
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
-        }
-    }
+        private fun searchCafes(query: String) {
+            val request = FindAutocompletePredictionsRequest.builder()
+                .setQuery(query)
+                .build()
 
-    // Adapter class for RecyclerView
-    class CafeAdapter(private val cafeList: List<CafeData>) :
-        RecyclerView.Adapter<CafeAdapter.CafeViewHolder>() {
-
-        // ViewHolder class for the RecyclerView item
-        class CafeViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-            val imageView: ImageView = itemView.findViewById(R.id.imageView)
-            val nameTextView: TextView = itemView.findViewById(R.id.nameTextView)
-            val addressTextView: TextView = itemView.findViewById(R.id.addressTextView)
-            val firstImageButton: ImageButton = itemView.findViewById(R.id.firstImageButton)
-        }
-
-        // Create ViewHolder for each item in the RecyclerView
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CafeViewHolder {
-            // Inflate the layout for each item
-            val itemView = LayoutInflater.from(parent.context)
-                .inflate(R.layout.item_cafe, parent, false)
-            return CafeViewHolder(itemView)
-        }
-
-        // Bind data to the ViewHolder
-        override fun onBindViewHolder(holder: CafeViewHolder, position: Int) {
-            val cafe = cafeList[position]
-            // Set the cafe name to the TextView
-            holder.nameTextView.text = cafe.name
-            // Set the cafe address to the TextView
-            holder.addressTextView.text = cafe.address
-
-            // Check if the imageUri is valid before loading the image
-            if (cafe.imageUri != null && cafe.imageUri.isNotEmpty()) {
-                // Load the image using Glide and the content URI with rounded corners
-                loadRoundedImageWithGlide(holder.imageView, cafe.imageUri, holder.itemView.context)
-            } else {
-                // Set a placeholder image with rounded corners
-                Glide.with(holder.itemView)
-                    .load(R.drawable.rounded_placeholder) // Replace with your placeholder image resource
-                    .apply(
-                        RequestOptions.bitmapTransform(
-                            MultiTransformation(
-                                CenterCrop(),
-                                RoundedCorners(
-                                    holder.itemView.context.resources.getDimensionPixelSize(
-                                        R.dimen.rounded_corners
-                                    )
-                                )
+            placesClient.findAutocompletePredictions(request)
+                .addOnSuccessListener { response ->
+                    // Create a new list to store the search results
+                    val newCafeList = mutableListOf<CafeData>()
+                    // Create a counter to keep track of the number of cafe data fetched
+                    var cafesFetched = 0
+                    // Loop through the autocomplete predictions
+                    for (prediction in response.autocompletePredictions) {
+                        val placeId = prediction.placeId
+                        // Fetch the place details using the placeId
+                        val placeRequest = FetchPlaceRequest.builder(
+                            placeId,
+                            listOf(
+                                Place.Field.NAME,
+                                Place.Field.ADDRESS,
+                                Place.Field.PHOTO_METADATAS
                             )
                         )
-                    )
-                    .into(holder.imageView)
-            }
-
-            // Set OnClickListener for the first image button
-            holder.firstImageButton.setOnClickListener {
-                cafe.firstButtonAction.invoke()
-            }
-
+                            .build()
+                        placesClient.fetchPlace(placeRequest)
+                            .addOnSuccessListener { fetchPlaceResponse ->
+                                val place = fetchPlaceResponse.place
+                                val name = place.name
+                                val address = place.address
+                                val photoMetadata = place.photoMetadatas?.get(0)
+                                // Use lifecycleScope.launch to run the suspend function in a coroutine scope
+                                lifecycleScope.launch {
+                                    val photoUri = photoMetadata?.let { getPhotoUri(it) }
+                                    // Check if both name and address are not null before creating the CafeData object
+                                    if (name != null && address != null && photoUri != null) {
+                                        val cafeData = CafeData(
+                                            id = placeId,
+                                            name = name,
+                                            address = address,
+                                            imageUri = photoUri,
+                                        )
+                                        // Add the cafeData to the new list
+                                        newCafeList.add(cafeData)
+                                    } else {
+                                        // Handle the case where either name, address, or photoUri is null
+                                        Toast.makeText(
+                                            this@SearchScreen,
+                                            "Failed to load cafe details",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                    cafesFetched++
+                                    // Check if all cafes have been fetched before notifying the adapter
+                                    if (cafesFetched == response.autocompletePredictions.size) {
+                                        cafeList.clear()
+                                        cafeList.addAll(newCafeList)
+                                        cafeAdapter.notifyDataSetChanged()
+                                    }
+                                }
+                            }
+                            .addOnFailureListener {
+                                // Handle place fetch failure
+                                cafesFetched++
+                                // Check if all cafes have been fetched before notifying the adapter
+                                if (cafesFetched == response.autocompletePredictions.size) {
+                                    cafeList.clear()
+                                    cafeList.addAll(newCafeList)
+                                    cafeAdapter.notifyDataSetChanged()
+                                }
+                            }
+                    }
+                }
+                .addOnFailureListener {
+                    // Handle autocomplete prediction fetch failure
+                    Toast.makeText(
+                        this@SearchScreen,
+                        "Failed to predict cafe results",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
         }
 
-        // Function to load images with rounded corners using Glide and RoundedCornersTransformation
-        private fun loadRoundedImageWithGlide(
-            imageView: ImageView,
-            imageUrl: String,
-            context: Context
-        ) {
-            Glide.with(context)
-                .load(imageUrl)
-                .apply(
-                    RequestOptions.bitmapTransform(
-                        MultiTransformation(
-                            CenterCrop(),
-                            RoundedCorners(context.resources.getDimensionPixelSize(R.dimen.rounded_corners))
-                        )
-                    )
-                )
-                .transition(DrawableTransitionOptions.withCrossFade())
-                .into(imageView)
+
+    /**
+     * Fetches the content URI of a photo using [PlacesClient]
+     *
+     * @param photoMetadata The [PhotoMetadata] object contains information about the photo to be fetched.
+     * @return The content URI of the fetched photo as a [String] or 'null'.
+     * @throws IOException If there is an error saving the Bitmap file.
+     *
+     */
+    private suspend fun getPhotoUri(photoMetadata: PhotoMetadata): String? {
+            val photoRequest = FetchPhotoRequest.builder(photoMetadata)
+                .setMaxWidth(500) // Set the maximum width of the image here if needed
+                .setMaxHeight(500) // Set the maximum height of the image here if needed
+                .build()
+            val photoResponse = placesClient.fetchPhoto(photoRequest).await()
+            // Check if the photoResponse contains a Bitmap
+            if (photoResponse.bitmap == null) {
+                return null // Return null if the response doesn't contain a Bitmap
+            }
+            // Save the Bitmap to a file and get its URI using FileProvider
+            val photoBitmap: Bitmap = photoResponse.bitmap
+            // Create a new file in the external cache directory
+            val photoFile = File(
+                applicationContext.cacheDir, // Use cache directory instead of external storage
+                "place_photo_${System.currentTimeMillis()}.jpg"
+            )
+            // Save the Bitmap to the file
+            withContext(Dispatchers.IO) {
+                saveBitmapToFile(photoBitmap, photoFile)
+            }
+            // Get the content URI for the saved photo file using FileProvider
+            val contentUri = FileProvider.getUriForFile(
+                applicationContext,
+                "com.example.fikabuild.fileprovider", // Update with your authority from the manifest
+                photoFile
+            )
+
+            return contentUri?.toString()
         }
 
-        // Return the number of items in the list
-        override fun getItemCount(): Int {
-            return cafeList.size
+        /**
+        * Saves the [Bitmap] to the specified [File].
+         * @param bitmap The [Bitmap] to be saved.
+         * @param file The [File] to which the [Bitmap] will be saved.
+         * @throws IOException If there is an error saving the [Bitmap] to the [File].
+        */
+        private fun saveBitmapToFile(bitmap: Bitmap, file: File) {
+            var outputStream: OutputStream? = null
+            try {
+                outputStream = FileOutputStream(file)
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+            } finally {
+                outputStream?.close()
+            }
+        }
+
+    /**
+     * Adds the specified [cafe] to the user's favorites in Firestore.
+     *
+     * @param cafe The [CafeData] object representing the cafe to be added to favorites.
+     */
+    private fun addToFavorites(cafe: CafeData) {
+        userUid?.let { userUid ->
+            // Reference to the "favorites" collection for the user in Firestore
+            val favoritesRef = firestore.collection("users").document(userUid)
+                .collection("favorites").document(cafe.id)
+            // Create a map containing cafe data to be stored in Firestore
+            val cafeDataMap = mapOf(
+                "id" to cafe.id,
+                "name" to cafe.name,
+                "address" to cafe.address,
+                "imageUri" to cafe.imageUri,
+                "isFavorite" to cafe.isFavorite // Include isFavorite property
+            )
+            favoritesRef.set(cafeDataMap)
+                .addOnSuccessListener {
+                    // Success: Cafe added to favorites
+                }
+                .addOnFailureListener {
+                    // Handle the error
+                    Toast.makeText(this, "Failed to add to favorites", Toast.LENGTH_SHORT).show()
+                }
         }
     }
-}
+
+
+    /**
+     * Removes the specified [cafe] from the user's favorites in Firestore.
+     *
+     * @param cafe The [CafeData] object representing the cafe to be removed from favorites.
+     */
+    private fun removeFromFavorites(cafe: CafeData) {
+        userUid?.let { userUid ->
+            // Reference to the "favorites" collection for the user in Firestore
+            val favoritesRef = FirebaseFirestore.getInstance()
+                .collection("users").document(userUid)
+                .collection("favorites").document(cafe.id)
+
+            // Delete the document
+            favoritesRef.delete()
+                .addOnSuccessListener {
+                    // Success: Cafe removed from favorites
+                }
+                .addOnFailureListener {
+                    // Handle the error
+                    Toast.makeText(this, "Failed to remove from favorites", Toast.LENGTH_SHORT).show()
+                }
+        }
+    }
+
+        /**
+         * Overrides the `onOptionsItemSelected` method of the activity to handle menu item selection.
+         *
+         * @param item The selected menu item.
+         * @return Boolean value indicating whether the item selection is handled.
+         */
+        override fun onOptionsItemSelected(item: MenuItem): Boolean {
+            return when (item.itemId) {
+                android.R.id.home -> {
+                    val intent = Intent(this@SearchScreen, MapsActivity::class.java)
+                    startActivity(intent)
+                    true
+                }
+                else -> super.onOptionsItemSelected(item)
+            }
+        }
+    }
+

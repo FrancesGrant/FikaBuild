@@ -63,6 +63,7 @@
         android:id="@+id/cafeRecyclerView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:paddingTop="0dp"
         android:layout_marginTop="20dp"
         android:layout_weight="1"
         android:paddingLeft="32dp"

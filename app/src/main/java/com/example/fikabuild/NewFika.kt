@@ -27,7 +27,9 @@ import okhttp3.*
 import org.json.JSONObject
 import java.io.IOException
 
-
+/**
+ * Activity that enables users to find and share coffee locations that are near the midpoint between two addresses.
+ */
 class NewFika : AppCompatActivity(), OnMapReadyCallback {
 
     private val locationPermissionRequestCode = 123 // Request code for location permission

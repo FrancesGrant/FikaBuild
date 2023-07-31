@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.MenuItem
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -20,7 +21,7 @@ import com.google.firebase.ktx.Firebase
  */
 class LogIn : AppCompatActivity() {
 
-    private lateinit var auth: FirebaseAuth // Firebase authentication instance
+    lateinit var auth: FirebaseAuth // Firebase authentication instance
     private lateinit var imageActivityResultLauncher: ActivityResultLauncher<Intent> // Launches the activity
 
     /**
@@ -33,6 +34,10 @@ class LogIn : AppCompatActivity() {
         setContentView(R.layout.activity_log_in)
         // Firebase authentication instance used for user authentication
         auth = Firebase.auth
+        // Initialize the imageActivityResultLauncher here
+        imageActivityResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            // Handle the result of the image activity here
+        }
         // Toolbar for navigation
         val toolbar = findViewById<Toolbar>(R.id.customActionBar)
         setSupportActionBar(toolbar)
@@ -42,10 +47,18 @@ class LogIn : AppCompatActivity() {
         val emailEditText = findViewById<EditText>(R.id.editTextEmail)
         val passwordEditText = findViewById<EditText>(R.id.editTextPassword)
         val loginButton = findViewById<Button>(R.id.loginButton)
+        // TextView
+        val textViewForgotPassword = findViewById<TextView>(R.id.textViewForgotPassword)
 
-        imageActivityResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            // Handle the result if needed
+        /**
+         * Sets a click listener for Forgot Password
+         * When clicked, it brings the user to the page to enter their credentials to get a login link
+         */
+        textViewForgotPassword.setOnClickListener{
+            val intent = Intent(this@LogIn, ResetPassword::class.java)
+            startActivity(intent)
         }
+
         /**
          * Sets a click listener for the Login button.
          * When clicked, it signs the user in if the email and password authenticates.
